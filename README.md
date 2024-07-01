@@ -50,7 +50,3 @@ For the first line, `light` is the username and groups are `sudo, dev, www-data`
 
 **Submission Deadline**:
 The deadline for submissions is Wed 3rd July, at 11:59 PM GMT. Late submissions will not be entertained.
-
----
-
-Feel free to ask if you need further assistance!
