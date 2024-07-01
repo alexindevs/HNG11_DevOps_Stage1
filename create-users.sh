@@ -31,15 +31,37 @@ create_user() {
         return
     fi
 
-    # create user using useradd command - creates home directory for the user, sets shell to bash, and adds user to specified groups
+    # Create personal group for the user
+    groupadd "$user"
 
-    useradd -m -s /bin/bash -G "$user,$groups" "$user"
+    # Create additional groups if they do not exist
+    IFS=' ' read -ra group_array <<< "$groups"
+
+    # Log the group array
+    log_action "User $user will be added to groups: ${group_array[*]}"
+
+    for group in "${group_array[@]}"; do
+        group=$(echo "$group" | xargs)  # Trim whitespace
+        if ! getent group "$group" &>/dev/null; then
+            groupadd "$group"
+            log_action "Group $group created."
+        fi
+    done
+
+    # Create user with home directory and shell, primary group set to the personal group
+    useradd -m -s /bin/bash -g "$user" "$user"
     if [ $? -eq 0 ]; then
-        log_action "User $user created with groups: $groups"
+        log_action "User $user created with primary group: $user"
     else
         log_action "Failed to create user $user."
         return
     fi
+
+    # Add the user to additional groups
+    for group in "${group_array[@]}"; do
+        usermod -aG "$group" "$user"
+    done
+    log_action "User $user added to groups: ${group_array[*]}"
 
     # generate password and store it securely in a file
     password=$(</dev/urandom tr -dc A-Za-z0-9 | head -c 12)
@@ -61,7 +83,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-filename = "$1"
+filename="$1"
 
 if [ ! -f "$filename" ]; then
     echo "Users list file $filename not found."
